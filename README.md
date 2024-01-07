@@ -1,8 +1,9 @@
 # loadshed
 tool to bypass overloaded routines
-Name          Stmts   Miss  Cover
----------------------------------
-loadshed.py      65      1    98%
-shedtest.py      54      1    98%
----------------------------------
-TOTAL           119      2    98%
+
+>Name          Stmts   Miss  Cover
+>---------------------------------
+>loadshed.py      64      0   100%
+>shedtest.py      57      0   100%
+>---------------------------------
+>TOTAL           121      0   100%

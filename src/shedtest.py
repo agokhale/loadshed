@@ -39,7 +39,7 @@ class LoadshedTest(unittest.TestCase):
         test_runtestpanel(10)
 
     def test_simpinit(self):
-        def lil_cbk():
+        def lil_cbk(): # pragma: no cover
             print("I'm the failure path")
 
         ls.addchannel(

@@ -37,7 +37,7 @@ def checkkws(kwargs):
             raise NameError(f"load shed param {i} must be named")
     if not (
         ("shedding_fn" in kwargs) and (type(kwargs["shedding_fn"]) == type(stopwatch))
-    ):
+    ): # pragma: no cover
         raise NameError("load shed 'shedding_fn' must be a function")
 
 

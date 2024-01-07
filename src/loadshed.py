@@ -50,7 +50,7 @@ def addchannel(**kwargs):
         "protect_count": 0,
         "observations": [],
     }
-    gctx[channel]["observations"].append((0, 0))
+    gctx[channel]["observations"].append((0, 0))  # tuple key: (epochtime, delta)
 
 
 def getchannelctx():
@@ -81,12 +81,22 @@ def ctxgc(channel):
         gctx[channel]["observations"] = [last_obs]
 
 
-def protect(channel):
+def protect(channel, **kwargs):
+    """decorator to gate access with the intent of limiting overcomitted
+    resources. The result of the decorator should be transparent if previos
+    iterations have been under threashhold_sec (s). If the last time this
+    channel observed a slow operation, above the threshold  exit using the
+    shedding_fn defind in the addchannel routine
+    Adding important=1  to positional params will run the routine, but
+    continue to accumulate timing data.
+    """
+    important = "important" in kwargs
+
     def outer_protect_fn(fn):
         """this weirdness wraps the decrator with arguments"""
 
         def inner_protect_fn(*args, **kwargs):
-            if tooslow(channel):
+            if tooslow(channel) and not important:
                 # exit early with the load shedding function
                 return gctx[channel]["config"]["shedding_fn"](*args, **kwargs)
 

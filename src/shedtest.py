@@ -66,6 +66,14 @@ class LoadshedTest(unittest.TestCase):
             time.sleep(timeout)
             return "runs"
 
+        @ls.protect("simpleprot", important=1)
+        def vip_fn(timeout: float):
+            """some routine should run no matter what, but still accumulate the timer
+            so a future run can use this timing data
+            """
+            time.sleep(timeout)
+            return "runs anyway"
+
         # now add a fast worload
         aeq(slo_fn(0.34), "runs")
         aeq(slo_fn(0.34), "runs")
@@ -76,10 +84,14 @@ class LoadshedTest(unittest.TestCase):
         aeq(slo_fn(0.64), "no")
         aeq(slo_fn(0.64), "no")
         aeq(slo_fn(0.64), "no")
+        aeq(
+            vip_fn(0.64), "runs anyway"
+        )  # this is 'important' so should run all the time
         time.sleep(1.0)  # chill for a minute
         aeq(slo_fn(0.010), "runs")  # this should run  again after cooldown
         for i in range(0, 1026):
             aeq(slo_fn(0.001), "runs")  # light the torch to check the gc routine
-        # this should be the count + protexts % max-observatiosn
-        aeq((len(ls.getchannelctx()["simpleprot"]["observations"])), 8)
+        # this should be the count + protexts % max-observations,
+        # might need a bump for added cases
+        aeq((len(ls.getchannelctx()["simpleprot"]["observations"])), 9)
         print(ls.getchannelctx())

@@ -37,7 +37,7 @@ def checkkws(kwargs):
             raise NameError(f"load shed param {i} must be named")
     if not (
         ("shedding_fn" in kwargs) and (type(kwargs["shedding_fn"]) == type(stopwatch))
-    ): # pragma: no cover
+    ):  # pragma: no cover
         raise NameError("load shed 'shedding_fn' must be a function")
 
 
@@ -50,7 +50,9 @@ def addchannel(**kwargs):
         "protect_count": 0,
         "observations": [],
     }
-    gctx[channel]["observations"].append((0, 0))  # tuple key: (epochtime, delta)
+    gctx[channel]["observations"].append(
+        (0, 0, "none")
+    )  # tuple key: (epochtime, delta, fn.__name__)
 
 
 def getchannelctx():
@@ -89,11 +91,21 @@ def protect(channel, **kwargs):
     shedding_fn defind in the addchannel routine
     Adding important=1  to positional params will run the routine, but
     continue to accumulate timing data.
+
+    the evironment variable 'loadshed_bypass' will prevent decorator installation
+    and run the target fn unharmed
     """
     important = "important" in kwargs
 
     def outer_protect_fn(fn):
         """this weirdness wraps the decrator with arguments"""
+
+        # provide a global off switch at runtime
+        # do nothing to the fn and reurn it unmolested
+        if "loadshed_bypass" in env:
+            return fn
+
+        outer_name = fn.__name__
 
         def inner_protect_fn(*args, **kwargs):
             if tooslow(channel) and not important:
@@ -109,7 +121,7 @@ def protect(channel, **kwargs):
 
             inner_res = timed_inner(*args, **kwargs)
             delta = stopwatch_getlast()
-            gctx[channel]["observations"].append((time.time(), delta))
+            gctx[channel]["observations"].append((time.time(), delta, outer_name))
             ctxgc(channel)
             return inner_res
 

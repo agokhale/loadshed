@@ -1,6 +1,6 @@
 import time
 import unittest
-
+import json
 import loadshed
 
 
@@ -39,7 +39,7 @@ class LoadshedTest(unittest.TestCase):
         test_runtestpanel(10)
 
     def test_simpinit(self):
-        def lil_cbk(): # pragma: no cover
+        def lil_cbk():  # pragma: no cover
             print("I'm the failure path")
 
         ls.addchannel(
@@ -94,4 +94,5 @@ class LoadshedTest(unittest.TestCase):
         # this should be the count + protexts % max-observations,
         # might need a bump for added cases
         aeq((len(ls.getchannelctx()["simpleprot"]["observations"])), 9)
+        vip_fn(0.64), "runs anyway"
         print(ls.getchannelctx())

@@ -42,6 +42,12 @@ def checkkws(kwargs):
 
 
 def addchannel(**kwargs):
+    """the 'channel':str named param is a string that ties together groups of functions
+    that will be observed and gated together
+    'threshhold_sec':float param is required
+    'cooldown_sec':float param is required
+    'shedding_fn':function will be run as  proxy for a slowly performing channel
+    """
     checkkws(kwargs)
     channel = kwargs["channel"]
     gctx[channel] = {
@@ -60,7 +66,7 @@ def getchannelctx():
 
 
 def tooslow(channel):
-    """side effect: cool down the previous value"""
+    """decide if this channel has been running too slowly"""
     obs = gctx[channel]["observations"]
     now = time.time()
     config = gctx[channel]["config"]
@@ -84,18 +90,25 @@ def ctxgc(channel):
 
 
 def protect(channel, **kwargs):
-    """decorator to gate access with the intent of limiting overcomitted
+    """Decorator to gate access with the intent of limiting overcomitted
     resources. The result of the decorator should be transparent if previos
     iterations have been under threashhold_sec (s). If the last time this
     channel observed a slow operation, above the threshold  exit using the
-    shedding_fn defind in the addchannel routine
+    shedding_fn defined in the addchannel routine.
     Adding important=1  to positional params will run the routine, but
     continue to accumulate timing data.
+    If alternate_loadshed_fn is provided, a different loadshed will called
+    for this protected function.
 
-    the evironment variable 'loadshed_bypass' will prevent decorator installation
-    and run the target fn unharmed
+    The evironment variable 'loadshed_bypass' will prevent decorator installation
+    and run the target fn unharmed.
     """
     important = "important" in kwargs
+
+    if "alternate_loadshed_fn" in kwargs:
+        loadshed_fn = kwargs["alternate_loadshed_fn"]
+    else:
+        loadshed_fn = gctx[channel]["config"]["shedding_fn"]
 
     def outer_protect_fn(fn):
         """this weirdness wraps the decrator with arguments"""
@@ -110,7 +123,7 @@ def protect(channel, **kwargs):
         def inner_protect_fn(*args, **kwargs):
             if tooslow(channel) and not important:
                 # exit early with the load shedding function
-                return gctx[channel]["config"]["shedding_fn"](*args, **kwargs)
+                return loadshed_fn(*args, **kwargs)
 
             # doing the slow path
             @stopwatch

@@ -57,6 +57,10 @@ class LoadshedTest(unittest.TestCase):
             # print ("protect activated", args, kwargs)
             return "no"
 
+        def alt_cbk(*args, **kwargs):
+            print("alternate activated", args, kwargs)
+            return "alternate shed fn runs"
+
         ls.addchannel(
             channel="simpleprot", shedding_fn=cbk, threshold_sec=0.5, cooldown_sec=1.0
         )
@@ -65,6 +69,11 @@ class LoadshedTest(unittest.TestCase):
         def slo_fn(timeout: float):
             time.sleep(timeout)
             return "runs"
+
+        @ls.protect("simpleprot", alternate_loadshed_fn=alt_cbk)
+        def alternate_slo_fn(timeout: float):
+            time.sleep(timeout)
+            return "runs-alt"
 
         @ls.protect("simpleprot", important=1)
         def vip_fn(timeout: float):
@@ -94,5 +103,8 @@ class LoadshedTest(unittest.TestCase):
         # this should be the count + protexts % max-observations,
         # might need a bump for added cases
         aeq((len(ls.getchannelctx()["simpleprot"]["observations"])), 9)
-        vip_fn(0.64), "runs anyway"
+        aeq(vip_fn(0.64), "runs anyway")
+        time.sleep(1.0)
+        aeq(alternate_slo_fn(0.64), "runs-alt")
+        aeq(alternate_slo_fn(0.14), "alternate shed fn runs")
         print(ls.getchannelctx())

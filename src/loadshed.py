@@ -138,6 +138,9 @@ def protect(channel, **kwargs):
             ctxgc(channel)
             return inner_res
 
+        # this is pants
+        # https://stackoverflow.com/questions/17256602/assertionerror-view-function-mapping-is-overwriting-an-existing-endpoint-functi
+        inner_protect_fn.__name__ = "terribleinnerwrappernameworkaround" + fn.__name__
         return inner_protect_fn
 
     return outer_protect_fn
